@@ -1,0 +1,62 @@
+matrix:
+  rows:
+    - { goos: darwin,  goarch: arm64, platform: osx-aarch_64     }
+    - { goos: darwin,  goarch: amd64, platform: osx-x86_64       }
+    - { goos: linux,   goarch: arm64, platform: linux-aarch_64   }
+    - { goos: linux,   goarch: amd64, platform: linux-x86_64     }
+    - { goos: windows, goarch: arm64, platform: windows-aarch_64 }
+    - { goos: windows, goarch: amd64, platform: windows-x86_64   }
+
+hooks:
+  script:
+    before:
+      - run: |
+          echo "building ${GOOS}-${GOARCH}"
+          go build -o target/${GOOS}-${GOARCH}/ src/helloworld.go
+        applyDefaultMatrix: true
+        verbose: true
+        environment:
+          GOOS: '{{ matrix.goos }}'
+          GOARCH: '{{ matrix.goarch }}'
+        filter:
+          includes: ['assemble']
+          
+project:
+  name: helloworld
+  description: HelloWorld in Go
+  longDescription: HelloWorld in Go
+  links:
+    homepage: https://github.com/jreleaser/helloworld-go-slsa
+  authors:
+    - Andres Almiray
+  license: Apache-2.0
+  inceptionYear: 2024
+  stereotype: CLI
+    
+release:
+  github:
+    overwrite: true
+    changelog:
+      formatted: ALWAYS
+      preset: conventional-commits
+      contributors:
+        format: '- {{contributorName}}{{#contributorUsernameAsLink}} ({{.}}){{/contributorUsernameAsLink}}'
+        
+assemble:
+  archive:
+    helloworld:
+      active: ALWAYS
+      formats: [ ZIP ]
+      applyDefaultMatrix: true
+      archiveName: '{{distributionName}}-{{projectVersion}}-{{ matrix.goos }}-{{ matrix.goarch }}'
+      fileSets:
+        - input: 'target/{{ matrix.goos }}-{{ matrix.goarch }}'
+          output: 'bin'
+          includes: [ 'helloworld{.exe,}' ]
+        - input: '.'
+          includes: [ 'LICENSE' ]
+        
+distributions:
+  helloworld:
+    executable:
+      windowsExtension: exe
